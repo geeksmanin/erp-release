@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Apple, Monitor, FileText, Check, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { Apple, Monitor, Terminal, FileText, Check, ArrowDownToLine, Loader2 } from 'lucide-react';
 
 interface ReleaseAsset {
   id: number;
@@ -69,24 +69,38 @@ export default function App() {
   };
 
   // Resolve platform assets
-  let macAsset: any = null;
+  let macUniversalAsset: any = null;
+  let macArmAsset: any = null;
+  let macIntelAsset: any = null;
   let winAsset: any = null;
+  let linuxDebAsset: any = null;
+  let linuxAppImageAsset: any = null;
 
   if (release?.assets) {
     release.assets.forEach(asset => {
       const name = asset.name.toLowerCase();
-      if (name.includes('darwin') || name.includes('mac') || name.includes('universal')) {
-        macAsset = asset;
+      if (name.includes('darwin') || name.includes('mac')) {
+        if (name.includes('universal')) {
+          macUniversalAsset = asset;
+        } else if (name.includes('arm64')) {
+          macArmAsset = asset;
+        } else if (name.includes('amd64')) {
+          macIntelAsset = asset;
+        }
       }
       if (name.includes('win') || name.includes('windows')) {
         winAsset = asset;
+      }
+      if (name.endsWith('.deb')) {
+        linuxDebAsset = asset;
+      }
+      if (name.endsWith('.appimage')) {
+        linuxAppImageAsset = asset;
       }
     });
   }
 
   const fallbackLink = `https://github.com/${repoOwner}/${repoName}/releases/latest`;
-  const macDownloadUrl = macAsset ? macAsset.browser_download_url : fallbackLink;
-  const winDownloadUrl = winAsset ? winAsset.browser_download_url : fallbackLink;
 
   return (
     <>
@@ -117,7 +131,7 @@ export default function App() {
           </div>
         </header>
 
-        <div className="download-grid">
+        <div className="download-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           {/* macOS Card */}
           <div className="download-card mac">
             <div className="card-header">
@@ -126,27 +140,37 @@ export default function App() {
               </div>
               <div className="os-info">
                 <h3>macOS</h3>
-                <p>Intel & Apple Silicon (M1/M2/M3)</p>
+                <p>Apple Silicon (M1/M2/M3) & Intel</p>
               </div>
             </div>
             <ul className="features-list">
               <li>
                 <Check size={18} />
-                Universal Binary support
+                Native M1/M2/M3 ARM64 support
               </li>
               <li>
                 <Check size={18} />
-                Native dark mode integration
+                Universal & standalone options
               </li>
               <li>
                 <Check size={18} />
-                Automatic OTA updates
+                Automatic OTA background updates
               </li>
             </ul>
-            <a href={macDownloadUrl} className="btn-download btn-mac">
-              <ArrowDownToLine size={20} />
-              {macAsset ? `Download for Mac (${formatBytes(macAsset.size)})` : 'Download from GitHub'}
-            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <a href={macArmAsset ? macArmAsset.browser_download_url : fallbackLink} className="btn-download btn-mac">
+                <ArrowDownToLine size={20} />
+                {macArmAsset ? `Apple Silicon ARM64 (${formatBytes(macArmAsset.size)})` : 'Apple Silicon Build'}
+              </a>
+              <a href={macIntelAsset ? macIntelAsset.browser_download_url : fallbackLink} className="btn-download btn-mac" style={{ opacity: 0.9, backgroundColor: '#4f46e5' }}>
+                <ArrowDownToLine size={20} />
+                {macIntelAsset ? `Intel x64 (${formatBytes(macIntelAsset.size)})` : 'Intel Build'}
+              </a>
+              <a href={macUniversalAsset ? macUniversalAsset.browser_download_url : fallbackLink} className="btn-download btn-mac" style={{ opacity: 0.8, backgroundColor: '#3b0764' }}>
+                <ArrowDownToLine size={20} />
+                {macUniversalAsset ? `Universal Bundle (${formatBytes(macUniversalAsset.size)})` : 'Universal Bundle'}
+              </a>
+            </div>
           </div>
 
           {/* Windows Card */}
@@ -174,10 +198,47 @@ export default function App() {
                 Direct background patching
               </li>
             </ul>
-            <a href={winDownloadUrl} className="btn-download btn-win">
+            <a href={winAsset ? winAsset.browser_download_url : fallbackLink} className="btn-download btn-win" style={{ marginTop: 'auto' }}>
               <ArrowDownToLine size={20} />
               {winAsset ? `Download for Windows (${formatBytes(winAsset.size)})` : 'Download from GitHub'}
             </a>
+          </div>
+
+          {/* Linux Card */}
+          <div className="download-card linux">
+            <div className="card-header">
+              <div className="os-icon">
+                <Terminal size={24} />
+              </div>
+              <div className="os-info">
+                <h3>Ubuntu Linux</h3>
+                <p>Ubuntu, Debian, and Linux Mint</p>
+              </div>
+            </div>
+            <ul className="features-list">
+              <li>
+                <Check size={18} />
+                Native DEB packaging (APT)
+              </li>
+              <li>
+                <Check size={18} />
+                Portable AppImage format
+              </li>
+              <li>
+                <Check size={18} />
+                Full system dark theme matching
+              </li>
+            </ul>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: 'auto' }}>
+              <a href={linuxDebAsset ? linuxDebAsset.browser_download_url : fallbackLink} className="btn-download" style={{ backgroundColor: '#e11d48', color: '#fff' }}>
+                <ArrowDownToLine size={20} />
+                {linuxDebAsset ? `Download DEB (${formatBytes(linuxDebAsset.size)})` : 'Download DEB Package'}
+              </a>
+              <a href={linuxAppImageAsset ? linuxAppImageAsset.browser_download_url : fallbackLink} className="btn-download" style={{ backgroundColor: '#2563eb', color: '#fff' }}>
+                <ArrowDownToLine size={20} />
+                {linuxAppImageAsset ? `Download AppImage (${formatBytes(linuxAppImageAsset.size)})` : 'Download AppImage'}
+              </a>
+            </div>
           </div>
         </div>
 
@@ -199,20 +260,28 @@ export default function App() {
           <div className="guide-card">
             <h4>🍏 macOS Installation</h4>
             <ol>
-              <li>Download the `Geeksman_OS_darwin_universal.zip` archive.</li>
-              <li>Extract the downloaded archive to get **Geeksman OS.app**.</li>
-              <li>Drag the application to your **Applications** folder.</li>
-              <li>If you see a security warning on startup: Go to **System Settings &gt; Privacy & Security** and click **"Open Anyway"**.</li>
+              <li>Download either the architecture-specific ZIP or the Universal bundle.</li>
+              <li>Extract the ZIP package to obtain **Geeksman OS.app**.</li>
+              <li>Drag the application into your **Applications** folder.</li>
+              <li>If blocked by Gatekeeper: Control-click/Right-click the app, choose **"Open"**, and confirm.</li>
             </ol>
           </div>
 
           <div className="guide-card">
             <h4>🏁 Windows Installation</h4>
             <ol>
-              <li>Download the `Geeksman_OS_windows_amd64.zip` archive.</li>
+              <li>Download the `GeeksmanOS_windows_amd64.zip` archive.</li>
               <li>Extract the ZIP package to a folder of your choice.</li>
               <li>Double-click **GeeksmanOS.exe** to start the ERP interface.</li>
               <li>If Windows SmartScreen prompts a warning, click **"More Info"** and then select **"Run Anyway"**.</li>
+            </ol>
+          </div>
+
+          <div className="guide-card">
+            <h4>🐧 Linux Installation</h4>
+            <ol>
+              <li>**DEB Package:** Run `sudo dpkg -i GeeksmanOS_*.deb` or double-click to install via Software Center.</li>
+              <li>**AppImage:** Right-click the `.AppImage` file, go to Properties &gt; Permissions, check **"Allow executing file as program"**, and double-click to run.</li>
             </ol>
           </div>
         </div>
@@ -224,3 +293,4 @@ export default function App() {
     </>
   );
 }
+
