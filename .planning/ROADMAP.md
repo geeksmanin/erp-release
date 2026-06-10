@@ -6,7 +6,7 @@ Roadmap for introducing version history and release selection features.
 
 ## Phases
 
-- [ ] **Phase 1: Support downloading older versions, show all versions, and mark latest version as stable** - Fetch all releases from GitHub, display a list of all versions, mark the latest version as stable, and update UI to allow downloading older versions.
+- [x] **Phase 1: Support downloading older versions, show all versions, and mark latest version as stable** - Fetch all releases from GitHub, display a list of all versions, mark the latest version as stable, and update UI to allow downloading older versions.
 
 ## Phase Details
 
@@ -28,7 +28,7 @@ Phases execute in numeric order: 1
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Support downloading older versions, show all versions, and mark latest version as stable | 0/1 | Not started | - |
+| 1. Support downloading older versions, show all versions, and mark latest version as stable | 1/1 | Completed | 2026-06-10 |
 
 ---
 *Last updated: 2026-06-10*

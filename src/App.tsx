@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Apple, Monitor, Terminal, FileText, Check, ArrowDownToLine, Loader2 } from 'lucide-react';
+import { Apple, Monitor, Terminal, FileText, Check, ArrowDownToLine, Loader2, ChevronDown } from 'lucide-react';
 
 interface ReleaseAsset {
   id: number;
@@ -16,7 +16,8 @@ interface ReleaseData {
 }
 
 export default function App() {
-  const [release, setRelease] = useState<ReleaseData | null>(null);
+  const [releases, setReleases] = useState<ReleaseData[]>([]);
+  const [selectedReleaseIndex, setSelectedReleaseIndex] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,23 +25,25 @@ export default function App() {
   const repoName = "erp-release";
 
   useEffect(() => {
-    async function fetchRelease() {
+    async function fetchReleases() {
       try {
-        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
+        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases`);
         if (!response.ok) {
           throw new Error('Failed to fetch release information');
         }
         const data = await response.json();
-        setRelease(data);
+        setReleases(data);
       } catch (err: any) {
         console.error(err);
-        setError(err.message || 'Unable to retrieve latest version');
+        setError(err.message || 'Unable to retrieve version history');
       } finally {
         setLoading(false);
       }
     }
-    fetchRelease();
+    fetchReleases();
   }, []);
+
+  const release = releases[selectedReleaseIndex] || null;
 
   // Format file sizes
   const formatBytes = (bytes: number, decimals = 1) => {
@@ -100,7 +103,7 @@ export default function App() {
     });
   }
 
-  const fallbackLink = `https://github.com/${repoOwner}/${repoName}/releases/latest`;
+  const fallbackLink = `https://github.com/${repoOwner}/${repoName}/releases/tag/${release?.tag_name || 'latest'}`;
 
   return (
     <>
@@ -117,17 +120,41 @@ export default function App() {
           <h1>Geeksman OS ERP</h1>
           <p className="subtitle">Experience a new era of enterprise resource planning. Clean, blazingly fast, and fully integrated desktop application for your organization.</p>
           
-          <div className="version-tag">
-            {loading ? (
-              <Loader2 className="animate-spin" size={16} />
-            ) : (
-              <div className="pulse-dot"></div>
+          <div className="header-controls">
+            <div className="version-tag">
+              {loading ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <div className="pulse-dot"></div>
+              )}
+              <span>
+                {loading && "Loading version history..."}
+                {!loading && error && "Unable to check versions"}
+                {!loading && !error && release && (
+                  selectedReleaseIndex === 0 
+                    ? `Latest Stable: ${release.tag_name}` 
+                    : `Version: ${release.tag_name}`
+                )}
+              </span>
+            </div>
+
+            {!loading && !error && releases.length > 0 && (
+              <div className="selector-wrapper">
+                <ChevronDown className="selector-chevron" size={16} />
+                <select 
+                  id="version-select"
+                  className="version-select"
+                  value={selectedReleaseIndex}
+                  onChange={(e) => setSelectedReleaseIndex(Number(e.target.value))}
+                >
+                  {releases.map((rel, idx) => (
+                    <option key={rel.tag_name} value={idx}>
+                      {rel.tag_name} {idx === 0 ? ' [Stable]' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-            <span>
-              {loading && "Loading latest version..."}
-              {!loading && error && "Unable to check version"}
-              {!loading && !error && release && `Latest: ${release.tag_name} (${new Date(release.published_at).toLocaleDateString()})`}
-            </span>
           </div>
         </header>
 
@@ -246,7 +273,7 @@ export default function App() {
         <div className="release-section">
           <div className="section-title">
             <FileText size={24} />
-            Release Notes
+            Release Notes ({release?.tag_name})
           </div>
           <div className="release-content">
             {loading && "Fetching release notes from GitHub..."}
